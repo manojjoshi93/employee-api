@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  employee-api
+
+  Sample SAM Template for employee-api
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+    MemorySize: 128
+
+Resources:
+  EmployeeTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: employee
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  EmployeeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.app
+      Runtime: python3.9
+      Timeout: 50
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName:
+              !Ref EmployeeTable
+      Environment:
+        Variables:
+          EmployeeTable: !Ref EmployeeTable
+      Events:
+        Test:
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
+        ListEmployee:
+          Type: Api
+          Properties:
+            Path: /employee
+            Method: get
+        PutEmployee:
+          Type: Api
+          Properties:
+            Path: /employee
+            Method: post
+        GetEmployee:
+          Type: Api
+          Properties:
+            Path: /employee/{id}/
+            Method: get
+        PatchEmployee:
+          Type: Api
+          Properties:
+            Path: /employee/{id}/
+            Method: patch
+        DeleteEmployee:
+          Type: Api
+          Properties:
+            Path: /employee/{id}/
+            Method: delete
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  EmployeeApi:
+    Description: "API Gateway endpoint URL for Prod stage for Employee function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+  EmployeeFunction:
+    Description: "Employee Lambda Function ARN"
+    Value: !GetAtt EmployeeFunction.Arn
+  EmployeeFunctionIamRole:
+    Description: "Implicit IAM Role created for Employee function"
+    Value: !GetAtt EmployeeFunctionRole.Arn
